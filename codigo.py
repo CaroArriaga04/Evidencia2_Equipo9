@@ -18,7 +18,7 @@ class Nota:
         self.servicios = []
         self.cancelada = False
 
-    def guardar_notas_csv():
+    def guardar_notas_csv(notas):
         with open('notas.csv', 'w', newline='') as csvfile:
             fieldnames = ['folio', 'fecha', 'cliente', 'rfc', 'correo', 'cancelada']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -66,11 +66,11 @@ class Servicio:
 def imprimir_nota(nota):
     monto_total = nota.calcular_monto_total()
     print("\n---------------NOTA-------------")
-    print(f"Folio: {nota['folio']}")
-    print(f"Fecha: {nota['fecha']}")
-    print(f"Cliente: {nota['cliente']}")
-    print(f"RFC: {nota['rfc']}")
-    print(f"Correo: {nota['correo']}")
+    print(f"Folio: {nota.folio}")
+    print(f"Fecha: {nota.fecha}")
+    print(f"Cliente: {nota.cliente}")
+    print(f"RFC: {nota.rfc}")
+    print(f"Correo: {nota.correo}")
     print("--------------------------------")
     print("Servicio:")
     for servicio in nota.servicios:
