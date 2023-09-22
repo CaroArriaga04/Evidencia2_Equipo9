@@ -30,6 +30,7 @@ class Nota:
                     'cliente' : nota.cliente,
                     'rfc': nota.rfc, 
                     'correo': nota.correo,
+                    'cancelada': nota.cancelada
                 })
 
     def cargar_notas_csv():
