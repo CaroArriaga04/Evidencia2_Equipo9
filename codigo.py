@@ -256,6 +256,47 @@ def consulta_por_folio():
                 break
         break
 
+def consulta_por_cliente():
+    confirmar = input("\n¿Deseas realizar una consulta por cliente? (Solamente Si/No): ")
+    if confirmar.lower() != "si":
+        print("\nNo se realizara ninguna consulta.")
+        return
+    RFC_consultado = input("Ingresa el RFC de la nota deseada a consultar: ")
+    #se abre una comprensión de lista para explorar todas las notas.
+    notas_clientes = [nota for nota in notas if RFC_consultado==nota.rfc and nota.cancelada == False]
+    if notas_clientes:
+        #se usará para ordenar alfabeticamente
+        notas_clientes.sort(key=lambda x: x.cliente)
+        print("\n---------NOTAS DEL CLIENTE---------")
+        informacion = [[n.folio, n.fecha, n.cliente] for n in notas_clientes]
+        atributos = ["Folio", "Fecha", "Cliente"]
+        print(tabulate(informacion, atributos))
+
+        # Calcular el monto promedio de las notas del cliente
+        monto_promedio = sum(n.calcular_monto_total() for n in notas_clientes) / len(notas_clientes)
+        print(f"\nEste es el monto promedio de las notas del cliente: ${monto_promedio:.2f}")
+    else:
+        print("\n*** No se encontraron notas para el RFC proporcionado o todas están canceladas *")
+
+    df = pd.DataFrame (informacion, colums = atributos)
+    while True:
+      pasar_excel=input ("Deseas convertir esta nota en un archivo excel?")
+      re_archivo_excel = r'^.*\.xlsx$'
+      if pasar_excel.lower()== "si":
+        print ("** OK **")
+        archivo_excel = input("\nIngrese el nombre del archivo Excel de salida (escribirlo siguiendo el siguiente formato, 'Nombre del archivo.xlsx'): ")
+        if archivo_excel == "":
+          print ("***NO SE PUEDE OMITIR ESTE DATO***")
+          continue
+        if not (bool(re.match(re_archivo_excel, archivo_excel))):
+          print ("***Para poder almacenar el archivo en un excel, es necesario usar la extensión .xlsx.***")
+          continue
+
+        df.to_excel(archivo_excel, index=False)
+
+        print(f"\n---Los resultados se han guardado en el archivo con el nombre:'{archivo_excel}'.---")
+        break
+
 def cancelar_nota():
     while True:
         cancelado = input("\nIngresa el folio de la nota a cancelar: ")
@@ -348,17 +389,19 @@ while True:
     if opcion == "1":
         if validar_continuidad("¿Estas seguro de realizar un registro?"):
             registrar_nota()
-            
+
     elif opcion == "2":
             while True:
                 print("\n----CONSULTAS Y REPORTES----")
-                print("1. Consulta por periodo\n2. Consulta por folio\n3. Regresar al menu principal ")
+                print("1. Consulta por periodo\n2. Consulta por folio\n3. Consulta por cliente\n4. Regresar al menu")
                 sub_opcion = input("Elige una opcion: ")
                 if sub_opcion == "1":
                     consulta_por_periodo()
                 elif sub_opcion == "2":
                     consulta_por_folio()
                 elif sub_opcion == "3":
+                    consulta_por_cliente()
+                elif sub_opcion == "4":
                     print("\n* OK *")
                     break
                 else:
