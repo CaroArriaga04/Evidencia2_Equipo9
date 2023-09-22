@@ -17,8 +17,9 @@ class Nota:
         self.correo = correo
         self.servicios = []
         self.cancelada = False
-
-    def guardar_notas_csv(notas):
+        
+    @staticmethod
+    def guardar_notas_csv():
         with open('notas.csv', 'w', newline='') as csvfile:
             fieldnames = ['folio', 'fecha', 'cliente', 'rfc', 'correo', 'cancelada']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -26,13 +27,14 @@ class Nota:
             for nota in notas:
                 writer.writerow({
                     'folio': nota.folio,
-                    'fecha': nota.fecha,
+                    'fecha': nota.fecha.strftime("%Y-%m-%d"),
                     'cliente' : nota.cliente,
                     'rfc': nota.rfc, 
                     'correo': nota.correo,
                     'cancelada': nota.cancelada
                 })
 
+    @staticmethod
     def cargar_notas_csv():
         try:
             with open('notas.csv', newline='') as csvfile:
@@ -247,17 +249,15 @@ def consulta_por_folio():
         if not folio.isdigit():
             print("\n* FOLIO DEBE SER NUMERO, INGRESE NUEVAMENTE")
             continue
-        nota_encontrada = False
-        with open('notas.csv', newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                if row['folio'] == folio and row['cancelada'] != 'True':
-                    imprimir_nota(row)
-                    nota_encontrada = True
-                    break
-        if not nota_encontrada:
+        nota_encontrada = None
+        for nota in notas:
+            if nota.folio == int(folio) and not nota.cancelada:
+                nota_encontrada = nota
+                break
+        if nota_encontrada:
+            imprimir_nota(nota_encontrada)
+        else:
             print("\n* EL FOLIO INDICADO NO EXISTE O CORRESPONDE A UNA NOTA CANCELADA *")
-            break
         break
 
 def consulta_por_cliente():
