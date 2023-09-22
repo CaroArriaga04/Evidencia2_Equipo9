@@ -30,7 +30,6 @@ class Nota:
                     'cliente' : nota.cliente,
                     'rfc': nota.rfc, 
                     'correo': nota.correo,
-                    'cancelada': nota.cancelada
                 })
 
     def cargar_notas_csv():
@@ -331,7 +330,7 @@ print("\n---------------TALLER MECANICO--------------")
 print("   BIENVENIDO A NUESTRO SISTEMA DE NOTAS    ")
 print("--------------------------------------------")
 
-cargar_notas_csv()
+Nota.cargar_notas_csv()
 
 while True:
     print("\nMENU")
@@ -375,7 +374,7 @@ while True:
 
     elif opcion == "5":
         if validar_continuidad("\n¿Deseas salir del programa?"):
-            guardar_notas_csv()
+            Nota.guardar_notas_csv()
             ("\nDe acuerdo. Saliendo del programa...")
             break
     else:
