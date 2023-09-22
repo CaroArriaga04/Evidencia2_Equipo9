@@ -47,7 +47,9 @@ class Nota:
                     nota.cancelada = cancelada
                     notas.append(nota)
         except FileNotFoundError:
-            print("NO HAY NINGUN ARCHIVO CSV ANTERIOR POR LO QUE SE COMENZARÁ DESDE UN ESTADO VACIO. ")
+            print("\nNo hay ningun archivo CSV anterior por lo que se comenzara desde un estado vacio. ")
+        else:
+            print("\nSe han cargado las notas del archivo CVS anterior.")
 
     def agregar_servicio(self, servicio):
         self.servicios.append(servicio)
@@ -64,11 +66,11 @@ class Servicio:
 def imprimir_nota(nota):
     monto_total = nota.calcular_monto_total()
     print("\n---------------NOTA-------------")
-    print(f"Folio: {nota.folio}")
-    print(f"Fecha: {nota.fecha}")
-    print(f"Cliente: {nota.cliente}")
-    print(f"RFC: {nota.rfc}")
-    print(f"Correo: {nota.correo}")
+    print(f"Folio: {nota['folio']}")
+    print(f"Fecha: {nota['fecha']}")
+    print(f"Cliente: {nota['cliente']}")
+    print(f"RFC: {nota['rfc']}")
+    print(f"Correo: {nota['correo']}")
     print("--------------------------------")
     print("Servicio:")
     for servicio in nota.servicios:
@@ -141,7 +143,8 @@ def registrar_nota():
         if correo == "":
             print("\n* INGRESE UN CORREO PARA EL REGISTRO DE LA NOTA *")
             continue
-        elif re.search('^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', correo) is None:
+        correo = correo.strip()
+        if re.search('^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', correo) is None:
             print("\n* CORREO NO VALIDO, INGRESE NUEVAMENTE *")
             continue
         else:
@@ -172,7 +175,7 @@ def registrar_nota():
             if costo_servicio == "":
                 print ("\n* NO SE PERIMTE LA OMICION DEL COSTO *")
                 continue
-            elif not (bool(re.match("^[0-9]+(\.[0-9]+)?$", costo_servicio))):
+            elif not (costo_servicio.isnumeric()):
                 print ("\n* COSTO NO VALIDO, INGRESE NUEVAMENTE *")
                 continue
             costo_servicio = float(costo_servicio)
@@ -218,8 +221,7 @@ def consulta_por_periodo():
         else:
             break
     
-    notas_no_canceladas = [n for n in notas if not n.cancelada]
-    notas_por_periodo = [n for n in notas_no_canceladas if fecha_inicial <= n.fecha  <= fecha_final]
+    notas_por_periodo = [n for n in notas if not n.cancelada and fecha_inicial <= n.fecha  <= fecha_final]
     if notas_por_periodo:
         print("\n---------------------------NOTAS POR PERIODO-------------------------")
         informacion = [[n.folio, n.fecha, n.cliente, n.rfc, n.correo] for n in notas_por_periodo]
@@ -242,19 +244,20 @@ def consulta_por_folio():
         if folio == "":
             print("\n* FOLIO OMITIDO, INGRESE PORFAVOR *")
             continue
-        try:
-            folio = int(folio)
-        except Exception:
+        if not folio.isdigit():
             print("\n* FOLIO DEBE SER NUMERO, INGRESE NUEVAMENTE")
             continue
         nota_encontrada = False
-        for nota in notas:
-            if nota.folio == int(folio) and not nota.cancelada:
-                imprimir_nota(nota)
-                nota_encontrada = True
-            if not nota_encontrada:
-                print("\n* EL FOLIO INDICADO NO EXISTE O CORRESPONDE A UNA NOTA CANCELADA *")
-                break
+        with open('notas.csv', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['folio'] == folio and row['cancelada'] != 'True':
+                    imprimir_nota(row)
+                    nota_encontrada = True
+                    break
+        if not nota_encontrada:
+            print("\n* EL FOLIO INDICADO NO EXISTE O CORRESPONDE A UNA NOTA CANCELADA *")
+            break
         break
 
 def consulta_por_cliente():
@@ -301,9 +304,7 @@ def consulta_por_cliente():
 def cancelar_nota():
     while True:
         cancelado = input("\nIngresa el folio de la nota a cancelar: ")
-        try:
-            cancelado = int(cancelado)
-        except Exception:
+        if not cancelado.isdigit():
             print("\n* FOLIO DEBE SER UN NUMERO, INGRESA NUEVAMENTE *")
             continue
         nota_a_cancelar = None 
@@ -346,9 +347,7 @@ def recuperar_nota():
         elif folio_a_recuperar == "":
             print("\n* FOLIO OMITIDO, INGRESE FOLIO *")
             continue
-        try:
-            folio_a_recuperar = int(folio_a_recuperar)
-        except Exception:
+        if not folio_a_recuperar.isdigit():
             print("\n* FOLIO DEBE SER UN NUMERO, INGRESA NUEVAMENTE *")
             continue
         nota_recuperada = None 
