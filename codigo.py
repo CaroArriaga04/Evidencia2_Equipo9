@@ -317,6 +317,7 @@ def cancelar_nota():
         if not cancelado.isdigit():
             print("\n* FOLIO DEBE SER UN NUMERO, INGRESA NUEVAMENTE *")
             continue
+        cancelado = int(cancelado)
         nota_a_cancelar = None 
         for nota in notas:
             if nota.folio == cancelado:
@@ -360,6 +361,7 @@ def recuperar_nota():
         if not folio_a_recuperar.isdigit():
             print("\n* FOLIO DEBE SER UN NUMERO, INGRESA NUEVAMENTE *")
             continue
+        folio_a_recuperar = int(folio_a_recuperar)
         nota_recuperada = None 
         for nota in notas:
             if nota.folio == folio_a_recuperar:
