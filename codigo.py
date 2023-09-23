@@ -270,27 +270,46 @@ def consulta_por_folio():
             print("\n* EL FOLIO INDICADO NO EXISTE O CORRESPONDE A UNA NOTA CANCELADA *")
         break
 
+def imprimir_notas_rfc():
+    notas_no_canceladas = [nota for nota in notas if not nota.cancelada]
+    
+    if notas_no_canceladas:
+        notas_no_canceladas.sort(key=lambda x: (x.rfc, x.folio))
+        
+        current_rfc = None  #esta variable tastreara el RFC actual en el for
+        
+        for nota in notas_no_canceladas:
+            if nota.rfc != current_rfc:
+                # Imprimir el RFC cuando cambia
+                print(f"RFC: {nota.rfc}")
+                current_rfc = nota.rfc
+            
+            # Imprimir el folio de la nota actual
+            print(f"Folio: {nota.folio}")
+            print("______________")
+    else:
+        print("\n*** No se encontraron notas no canceladas ***")
+
 def consulta_por_cliente():
     confirmar = input("\n¿Deseas realizar una consulta por cliente? (Solamente Si/No): ")
     if confirmar.lower() != "si":
         print("\nNo se realizara ninguna consulta.")
         return
-    RFC_consultado = input("Ingresa el RFC de la nota deseada a consultar: ")
-    #se abre una comprensión de lista para explorar todas las notas.
-    notas_clientes = [nota for nota in notas if RFC_consultado==nota.rfc and nota.cancelada == False]
-    if notas_clientes:
-        #se usará para ordenar alfabeticamente
-        notas_clientes.sort(key=lambda x: x.cliente)
-        print("\n---------NOTAS DEL CLIENTE---------")
-        informacion = [[n.folio, n.fecha, n.cliente] for n in notas_clientes]
-        atributos = ["Folio", "Fecha", "Cliente"]
-        print(tabulate(informacion, atributos))
-
-        # Calcular el monto promedio de las notas del cliente
-        monto_promedio = sum(n.calcular_monto_total() for n in notas_clientes) / len(notas_clientes)
-        print(f"\nEste es el monto promedio de las notas del cliente: ${monto_promedio:.2f}")
-    else:
-        print("\n*** No se encontraron notas para el RFC proporcionado o todas están canceladas *")
+    while True:
+      imprimir_notas_rfc()
+      folio_consultado = input("Ingresa el folio referente al RFC deseado a consultar: ")
+      if folio_consultado == "":
+        print ("*El dato no se puede omitir*")
+        continue
+      try:
+            folio_consultado = int(folio_consultado)
+      except Exception:
+            print("\n* FOLIO DEBE SER NUMERO, INGRESE NUEVAMENTE")
+            continue
+      break
+    for nota in notas:
+       if folio_consultado == nota.folio:
+          imprimir_nota()
 
     df = pd.DataFrame (informacion, colums = atributos)
     while True:
