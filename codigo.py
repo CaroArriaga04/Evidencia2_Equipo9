@@ -21,17 +21,23 @@ class Nota:
     @staticmethod
     def guardar_notas_csv():
         with open('notas.csv', 'w', newline='') as csvfile:
-            fieldnames = ['folio', 'fecha', 'cliente', 'rfc', 'correo', 'cancelada']
+            fieldnames = ['folio', 'fecha', 'cliente', 'rfc', 'correo', 'cancelada', 'servicios','precios', 'monto_total']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for nota in notas:
+                servicios = ', '.join([servicio.nombre for servicio in nota.servicios])
+                precios = ', '.join([str(servicio.costo) for servicio in nota.servicios])
+                monto_total = nota.calcular_monto_total()
                 writer.writerow({
                     'folio': nota.folio,
                     'fecha': nota.fecha.strftime("%Y-%m-%d"),
                     'cliente' : nota.cliente,
                     'rfc': nota.rfc, 
                     'correo': nota.correo,
-                    'cancelada': nota.cancelada
+                    'cancelada': nota.cancelada,
+                    'servicios': servicios,
+                    'precios': precios,
+                    'monto_total': monto_total
                 })
 
     @staticmethod
@@ -45,7 +51,11 @@ class Nota:
                     rfc = row['rfc']
                     correo = row['correo']
                     cancelada = row['cancelada'] == 'True'
+                    servicios_nombres = row['servicios'].split(', ')
+                    servicios_precios = map(float, row['precios'].split(', '))
+                    servicios = [Servicio(nombre, precio) for nombre, precio in zip(servicios_nombres, servicios_precios)]
                     nota = Nota(cliente, fecha, rfc, correo)
+                    nota.servicios = servicios
                     nota.cancelada = cancelada
                     notas.append(nota)
         except FileNotFoundError:
