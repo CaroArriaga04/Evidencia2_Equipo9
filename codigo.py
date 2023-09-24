@@ -309,26 +309,35 @@ def consulta_por_cliente():
       break
     for nota in notas:
        if folio_consultado == nota.folio:
-          imprimir_nota()
+          imprimir_nota(folio_consultado)
+          # Crear un DataFrame a partir de la información de la nota
+          informacion = [[nota.folio, nota.fecha, nota.cliente, nota.rfc, nota.correo]]
+          atributos = ["Folio", "Fecha", "Cliente", "RFC", "Correo"]
+          df = pd.DataFrame(informacion, columns=atributos)
 
-    df = pd.DataFrame (informacion, colums = atributos)
-    while True:
-      pasar_excel=input ("Deseas convertir esta nota en un archivo excel?")
-      re_archivo_excel = r'^.*\.xlsx$'
-      if pasar_excel.lower()== "si":
-        print ("** OK **")
-        archivo_excel = input("\nIngrese el nombre del archivo Excel de salida (escribirlo siguiendo el siguiente formato, 'Nombre del archivo.xlsx'): ")
-        if archivo_excel == "":
-          print ("***NO SE PUEDE OMITIR ESTE DATO***")
-          continue
-        if not (bool(re.match(re_archivo_excel, archivo_excel))):
-          print ("***Para poder almacenar el archivo en un excel, es necesario usar la extensión .xlsx.***")
-          continue
+            # Preguntar al usuario si desea guardar la nota en un archivo Excel
+          while True:
+              pasar_excel = input("¿Deseas convertir esta nota en un archivo Excel? (Si/No): ")
+              if pasar_excel.lower() == "si":
+                  archivo_excel = input("\nIngrese el nombre del archivo Excel de salida (siguiendo el formato 'Nombre del archivo.xlsx'): ")
+                  if archivo_excel == "":
+                      print("\n* NO SE PUEDE OMITIR ESTE DATO *")
+                      continue
+                  if not re.match(r'^.*\.xlsx$', archivo_excel):
+                      print("\n*** Para almacenar el archivo en formato Excel, debe usar la extensión .xlsx. ***")
+                      continue
 
-        df.to_excel(archivo_excel, index=False)
-
-        print(f"\n---Los resultados se han guardado en el archivo con el nombre:'{archivo_excel}'.---")
-        break
+                  # Guardar el DataFrame en el archivo de Excel
+                  df.to_excel(archivo_excel, index=False)
+                  print(f"\n--- Los resultados se han guardado en el archivo con el nombre: '{archivo_excel}' ---")
+                  break
+              elif pasar_excel == "no":
+                  print("\n**No se guardará en un archivo Excel.**")
+                  break
+              else:
+                  print("\n**La respuesta ingresada debe ser 'Si' o 'No'.**")
+       else:
+          print("\n* El folio proporcionado no corresponde a una nota registrada *")
 
 def cancelar_nota():
     while True:
