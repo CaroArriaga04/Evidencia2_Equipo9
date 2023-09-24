@@ -345,6 +345,9 @@ def consulta_por_cliente():
 def cancelar_nota():
     while True:
         cancelado = input("\nIngresa el folio de la nota a cancelar: ")
+        if cancelado == "":
+            print ("\n* FOLIO OMITIDO, INGRESE NUEVAMENTE*")
+            continue
         if not cancelado.isdigit():
             print("\n* FOLIO DEBE SER UN NUMERO, INGRESA NUEVAMENTE *")
             continue
