@@ -327,6 +327,9 @@ def consulta_por_cliente():
                       print("\n*** Para almacenar el archivo en formato Excel, debe usar la extensión .xlsx. ***")
                       continue
 
+              if pasar_excel.lower() == "no":
+                  print ("OK")
+                  break
                   # Guardar el DataFrame en el archivo de Excel
                   df.to_excel(archivo_excel, index=False)
                   print(f"\n--- Los resultados se han guardado en el archivo con el nombre: '{archivo_excel}' ---")
