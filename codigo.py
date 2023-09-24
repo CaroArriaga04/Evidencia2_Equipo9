@@ -3,6 +3,7 @@ import re
 from tabulate import tabulate
 import pandas as pd
 import csv
+import os
 
 folio_actual = 0
 
@@ -129,7 +130,7 @@ def registrar_nota():
       if cliente == "":
         print ("\n* INGRESE UN NOMBRE PARA EL REGISTRO DE LA NOTA *")
         continue
-      elif not (bool(re.search('^[a-zA-Z]+$', cliente))):
+      elif not (bool(re.search('^[a-zA-Z ]+$', cliente))):
         print ("\n* NOMBRE NO VALIDO, INGRESE NUEVAMENTE *")
         continue
       else:
@@ -142,9 +143,6 @@ def registrar_nota():
             continue
         elif re.search('^[A-Z]{3,4}[0-9]{6}[A-Z0-9]{3}$', rfc) is None:
             print("\n* RFC NO VALIDO, INGRESE NUEVAMENTE *")
-            continue
-        elif rfc in rfc_registrados:
-            print("\n* RFC YA REGISTRADO, INGRESE NUEVAMENTE *")
             continue
         else:
             rfc_registrados.add(rfc)
@@ -177,7 +175,7 @@ def registrar_nota():
         elif nombre_servicio == "":
           print ("\n * INGRESE EL SERVICIO REQUERIDO * ")
           continue
-        elif not (bool(re.search('^[a-zA-Z]+$', nombre_servicio))):
+        elif not (bool(re.search('^[a-zA-Z ]+$', nombre_servicio))):
           print ("\n* SERVICIO NO VALIDO, INGRESE NUEVAMENTE *")
           continue
 
@@ -187,10 +185,14 @@ def registrar_nota():
             if costo_servicio == "":
                 print ("\n* NO SE PERIMTE LA OMICION DEL COSTO *")
                 continue
-            elif not (costo_servicio.isnumeric()):
+            try:
+                costo_servicio = float(costo_servicio)
+                if costo_servicio != float(f"{costo_servicio:.2f}"):
+                    print("\n* NO SE PERMITEN MAS DE 2 DECIMALES, INGRESE NUEVAMENTE *")
+                    continue
+            except Exception:
                 print ("\n* COSTO NO VALIDO, INGRESE NUEVAMENTE *")
                 continue
-            costo_servicio = float(costo_servicio)
             if costo_servicio <= 0:
                 print("\n* EL COSTO DEL SERVICIO DEBE SER MAYOR A 0, INGRESE NUEVAMENTE *")
                 continue
@@ -244,7 +246,7 @@ def consulta_por_periodo():
         informacion = [["Monto promedio", monto_promedio]]
         print(tabulate(informacion, tablefmt="fancy_grid"))
     else:
-        print("\n* NO SE ENCUENTRAN NOTAS EN PERIODO SOLICITADO *")
+        print("\n* NO SE ENCUENTRAN NOTAS EN EL PERIODO SOLICITADO *")
 
 def consulta_por_folio():
     confirmar = input("\n¿Deseas realizar una consulta por folio? (Solamente Si/No): ")
@@ -272,75 +274,85 @@ def consulta_por_folio():
 
 def imprimir_notas_rfc():
     notas_no_canceladas = [nota for nota in notas if not nota.cancelada]
-    
+    informacion = []
+
     if notas_no_canceladas:
         notas_no_canceladas.sort(key=lambda x: (x.rfc, x.folio))
         
         current_rfc = None  #esta variable tastreara el RFC actual en el for
-        
+        folio = 0
+
         for nota in notas_no_canceladas:
             if nota.rfc != current_rfc:
-                # Imprimir el RFC cuando cambia
-                print(f"RFC: {nota.rfc}")
+                folio += 1
                 current_rfc = nota.rfc
-            
-            # Imprimir el folio de la nota actual
-            print(f"Folio: {nota.folio}")
-            print("______________")
+                informacion.append([nota.rfc, folio])
+        print(tabulate(informacion, headers=["RFC", "Folio"], tablefmt="fancy_grid"))
     else:
-        print("\n*** No se encontraron notas no canceladas ***")
+        print("\nNo hay notas disponibles para consultar.")
+    return informacion
 
 def consulta_por_cliente():
     confirmar = input("\n¿Deseas realizar una consulta por cliente? (Solamente Si/No): ")
     if confirmar.lower() != "si":
         print("\nNo se realizara ninguna consulta.")
         return
+    informacion_notas = imprimir_notas_rfc()
     while True:
-      imprimir_notas_rfc()
-      folio_consultado = input("Ingresa el folio referente al RFC deseado a consultar: ")
+      folio_consultado = input("\nIngresa el folio referente al RFC deseado a consultar: ")
       if folio_consultado == "":
-        print ("*El dato no se puede omitir*")
+        print ("\n* NO OMITIR FOLIO, INGRESE POR FAVOR *")
         continue
       try:
-            folio_consultado = int(folio_consultado)
+          folio_consultado = int(folio_consultado)
       except Exception:
-            print("\n* FOLIO DEBE SER NUMERO, INGRESE NUEVAMENTE")
+            print("\n* FOLIO DEBE SER NUMERO, INGRESE NUEVAMENTE *")
             continue
+      rfc_seleccionado = None
+      for informacion in informacion_notas:
+          if folio_consultado == informacion[1]:
+            rfc_seleccionado = informacion[0]
+            break
+      if rfc_seleccionado is None:
+         print("\n* EL FOLIO PROPORCIONADO NO CORRESPONDE A UN RFC *")
+         continue
+      notas_seleccionadas = [nota for nota in notas if nota.rfc == rfc_seleccionado and not nota.cancelada]
       break
-    for nota in notas:
-       if folio_consultado == nota.folio:
-          imprimir_nota(folio_consultado)
-          # Crear un DataFrame a partir de la información de la nota
-          informacion = [[nota.folio, nota.fecha, nota.cliente, nota.rfc, nota.correo]]
-          atributos = ["Folio", "Fecha", "Cliente", "RFC", "Correo"]
-          df = pd.DataFrame(informacion, columns=atributos)
+      
+    informacion = []
+    for nota in notas_seleccionadas:  
+            imprimir_nota(nota)
+            # Crear un DataFrame a partir de la información de la nota
+            servicios = ', '.join([servicio.nombre for servicio in nota.servicios])
+            costos = ', '.join([str(servicio.costo) for servicio in nota.servicios])
+            total = sum([servicio.costo for servicio in nota.servicios])
+            informacion.append([nota.folio, nota.fecha, nota.cliente, nota.rfc, nota.correo, servicios, costos, total])
+                    
+    if notas_seleccionadas:
+        montos = [servicio.costo for nota in notas_seleccionadas for servicio in nota.servicios]
+        monto_promedio = pd.Series(montos).mean()
+        informacion_promedio = [["Monto promedio", monto_promedio]]
+        print(tabulate(informacion_promedio, tablefmt="fancy_grid"))
 
-            # Preguntar al usuario si desea guardar la nota en un archivo Excel
-          while True:
-              pasar_excel = input("¿Deseas convertir esta nota en un archivo Excel? (Si/No): ")
-              if pasar_excel.lower() == "si":
-                  archivo_excel = input("\nIngrese el nombre del archivo Excel de salida (siguiendo el formato 'Nombre del archivo.xlsx'): ")
-                  if archivo_excel == "":
-                      print("\n* NO SE PUEDE OMITIR ESTE DATO *")
-                      continue
-                  if not re.match(r'^.*\.xlsx$', archivo_excel):
-                      print("\n*** Para almacenar el archivo en formato Excel, debe usar la extensión .xlsx. ***")
-                      continue
+    atributos = ["Folio", "Fecha", "Cliente", "RFC", "Correo", "Servicio", "Costo", "Monto total"]
+    df = pd.DataFrame(informacion, columns=atributos)
+    df['Monto total'] = df['Monto total'].astype(float)  
+    
+    # Preguntar al usuario si desea guardar la nota en un archivo Excel
+    while True:
+        pasar_excel = input("\n¿Deseas convertir esta nota en un archivo Excel? (Si/No): ")
+        if pasar_excel.lower() == "si":
+            fecha_actual = datetime.datetime.now().strftime('%d-%m-%Y')
+            archivo_excel = f"{nota.rfc}_{fecha_actual}.xlsx"
 
-              if pasar_excel.lower() == "no":
-                  print ("OK")
-                  break
-                  # Guardar el DataFrame en el archivo de Excel
-                  df.to_excel(archivo_excel, index=False)
-                  print(f"\n--- Los resultados se han guardado en el archivo con el nombre: '{archivo_excel}' ---")
-                  break
-              elif pasar_excel == "no":
-                  print("\n**No se guardará en un archivo Excel.**")
-                  break
-              else:
-                  print("\n**La respuesta ingresada debe ser 'Si' o 'No'.**")
-       else:
-          print("\n* El folio proporcionado no corresponde a una nota registrada *")
+        if pasar_excel.lower() == "no":
+            print ("\nOK")
+            break
+        # Guardar el DataFrame en el archivo de Excel
+        df.to_excel(archivo_excel, index=False, engine='openpyxl')
+        print(f"\n--- Los resultados se han guardado en el archivo con el nombre: '{archivo_excel}' ---")
+        print(f"\nEl archivo '{archivo_excel}' se ha guardado en la ubicación: {os.path.abspath(archivo_excel)}")
+        break
 
 def cancelar_nota():
     while True:
@@ -357,6 +369,11 @@ def cancelar_nota():
             if nota.folio == cancelado:
                 nota_a_cancelar = nota
                 break
+        if nota_a_cancelar:
+            if nota_a_cancelar.cancelada:
+                print("\n* LA NOTA YA ESTÁ CANCELADA *")
+                continue
+            imprimir_nota(nota_a_cancelar)
         if nota_a_cancelar:
             imprimir_nota(nota_a_cancelar)
             while True:
